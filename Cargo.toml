@@ -25,9 +25,9 @@ package = "chrono"
 
 [dependencies.egui]
 #version = "0.19"
-path = "../egui/crates/egui"
-#git = "https://github.com/mankinskin/egui"
-#branch = "placer-measure"
+#path = "../egui/crates/egui"
+git = "https://github.com/mankinskin/egui"
+branch = "placer-measure"
 #features = ["single_threaded"]
 #default-features = false
 #package = "egui"
