@@ -5,6 +5,8 @@ use once_cell::sync::Lazy;
 use parking_lot::Mutex;
 use std::{fmt::Write, sync::Arc};
 
+pub static LOG_ENTRIES: Lazy<Mutex<Vec<LogEvent>>> = Lazy::new(Default::default);
+
 #[derive(Clone)]
 pub struct LogSpan {
     pub meta: Option<&'static tracing::Metadata<'static>>,
@@ -19,12 +21,9 @@ pub struct LogEvent {
     pub span: Option<Arc<LogSpan>>,
 }
 
-pub static LOG_ENTRIES: Lazy<Mutex<Vec<LogEvent>>> = Lazy::new(Default::default);
-
 struct HashMapFieldRecordVisitor<'a> {
     target: &'a mut IndexMap<&'static str, SmartString, DefaultHashBuilder>,
 }
-
 impl<'a> HashMapFieldRecordVisitor<'a> {
     fn of(target: &'a mut IndexMap<&'static str, SmartString, DefaultHashBuilder>) -> Self {
         Self { target }
@@ -40,6 +39,7 @@ impl<'a> tracing::field::Visit for HashMapFieldRecordVisitor<'a> {
     }
 
     fn record_debug(&mut self, field: &tracing::field::Field, value: &dyn std::fmt::Debug) {
+        let value = format!("{:?}", value);
         self.target
             .entry(field.name())
             .and_modify(|entry| write!(entry, ", {:?}", value).unwrap())
@@ -58,7 +58,9 @@ impl LogSpan {
 
     pub fn show_fields(&self, ui: &mut egui::Ui) {
         for (field, value) in &self.fields {
-            ui.add(egui::Label::new(format_args!("{}: {}", field, value)).monospace());
+            ui.add(egui::Label::new(
+                egui::RichText::new(format!("{}: {:?}", field, value)).monospace(),
+            ));
         }
     }
 }
@@ -74,7 +76,9 @@ impl LogEvent {
 
     pub fn show_fields(&self, ui: &mut egui::Ui) {
         for (field, value) in &self.fields {
-            ui.add(egui::Label::new(format_args!("{}: {}", field, value)).monospace());
+            ui.add(egui::Label::new(
+                egui::RichText::new(format!("{}: {:?}", field, value)).monospace(),
+            ));
         }
     }
 }

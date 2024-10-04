@@ -1,7 +1,5 @@
 use crate::archive::LOG_ENTRIES;
 use tracing::{level_filters::STATIC_MAX_LEVEL, Level};
-
-#[derive(Debug)]
 pub struct LogPanel;
 
 #[derive(Debug, Clone)]
@@ -29,10 +27,11 @@ impl egui::Widget for LogPanel {
     fn ui(self, ui: &mut egui::Ui) -> egui::Response {
         let id = ui.make_persistent_id("tracing-egui::LogPanel");
         let mut state = ui
-            .memory()
-            .id_data
-            .get_or_default::<LogPanelState>(id)
-            .clone();
+            .memory_mut(|r| 
+                r.data
+                .get_temp_mut_or_default::<LogPanelState>(id)
+                .clone()
+            );
 
         let mut response = ui
             .centered_and_justified(|ui| {
@@ -71,13 +70,13 @@ impl egui::Widget for LogPanel {
 
             let log_id = id.with(log_ix);
             let r = match log.fields.get("message") {
-                Some(message) => egui::CollapsingHeader::new(format_args!(
-                    "[{}] [{}] {}",
+                Some(message) => egui::CollapsingHeader::new(format!(
+                    "[{}] [{}] {:?}",
                     log.timestamp.format("%H:%M:%S%.3f"),
                     log.meta.level(),
                     message,
                 )),
-                None => egui::CollapsingHeader::new(format_args!(
+                None => egui::CollapsingHeader::new(format!(
                     "[{}] [{}]",
                     log.timestamp.format("%H:%M:%S%.3f"),
                     log.meta.level(),
@@ -85,13 +84,11 @@ impl egui::Widget for LogPanel {
             }
             .id_source(log_id)
             .show(ui, |ui| {
-                let r = egui::CollapsingHeader::new(format_args!(
-                    "{} {}",
-                    log.meta.target(),
-                    log.meta.name(),
-                ))
+                let r = egui::CollapsingHeader::new(
+                    egui::RichText::new(format!("{} {}", log.meta.target(), log.meta.name(),))
+                        .monospace(),
+                )
                 .id_source(log_id.with(0usize))
-                .text_style(egui::TextStyle::Monospace)
                 .show(ui, |ui| {
                     log.show_fields(ui);
                 });
@@ -105,13 +102,15 @@ impl egui::Widget for LogPanel {
                         .enumerate()
                 {
                     let span_id = log_id.with(span_ix + 1);
-                    let r = egui::CollapsingHeader::new(format_args!(
-                        "{}::{}",
-                        span.meta.map_or("{unknown}", |meta| meta.target()),
-                        span.meta.map_or("{unknown}", |meta| meta.name()),
-                    ))
+                    let r = egui::CollapsingHeader::new(
+                        egui::RichText::new(format!(
+                            "{}::{}",
+                            span.meta.map_or("{unknown}", |meta| meta.target()),
+                            span.meta.map_or("{unknown}", |meta| meta.name()),
+                        ))
+                        .monospace(),
+                    )
                     .id_source(span_id)
-                    .text_style(egui::TextStyle::Monospace)
                     .show(ui, |ui| {
                         span.show_fields(ui);
                     });
@@ -127,7 +126,9 @@ impl egui::Widget for LogPanel {
             }
         }
 
-        ui.memory().id_data.insert(id, state);
+        ui.memory_mut(|r|
+            r.data.insert_temp(id, state)
+        );
         response
     }
 }

@@ -16,6 +16,7 @@ version = "0.1.0"
 description = "Integration to display tracing events in an egui context"
 license = "MIT OR Apache-2.0"
 resolver = "2"
+
 [dependencies.chrono]
 version = "0.4"
 features = ["std", "clock"]
@@ -23,10 +24,13 @@ default-features = false
 package = "chrono"
 
 [dependencies.egui]
-version = "0.13"
-features = ["single_threaded"]
-default-features = false
-package = "egui"
+#version = "0.19"
+path = "../egui/crates/egui"
+#git = "https://github.com/mankinskin/egui"
+#branch = "placer-measure"
+#features = ["single_threaded"]
+#default-features = false
+#package = "egui"
 
 [dependencies.hashbrown]
 version = "0.11"
@@ -60,12 +64,16 @@ package = "smartstring"
 version = "0.1"
 default-features = false
 package = "tracing"
+features = ["valuable"]
 
 [dependencies.tracing-subscriber]
-version = "0.2"
+version = "0.3"
 features = ["registry"]
 default-features = false
 package = "tracing-subscriber"
+
+[dependencies.valuable]
+version = "^0.1"
 
 [features]
 default = ["smartstring"]
